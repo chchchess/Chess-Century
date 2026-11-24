@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#262b22" />
+  <title>Chess Century - by sepram</title>
+  <style>
+    :root {
+      --bg-main: #262b22;
+      --bg-panel: #31382c;
+      --bg-card: #3b4435;
+      --text-light: #f4f3e8;
+      --text-muted: #c2c5b4;
+      --cream: #eeeed2;
+      --green: #769656;
+      --highlight-select: rgba(246, 246, 105, 0.72);
+      --highlight-last: rgba(186, 202, 68, 0.65);
+      --accent: #8cb369;
+      --danger: #d9534f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+      gap: 12px;
+    }
+
+    .app-container {
+      display: flex;
+      gap: 20px;
+      max-width: 1040px;
+      width: 100%;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .board-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      max-width: 540px;
+    }
+
+    .player-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-panel);
+      padding: 9px 12px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .player-bar.active-turn {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px rgba(140, 179, 105, 0.25);
+    }
+
+    .player-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 17px;
+    }
+
+    .avatar.white {
+      background: var(--cream);
+      color: #222;
+    }
+
+    .avatar.black {
+      background: #1f231c;
+      color: var(--cream);
+      border: 1px solid #555;
+    }
+
+    .player-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .captured-list {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      min-height: 18px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      flex-wrap: wrap;
+    }
+
+    .captured-list svg {
+      width: 15px;
+      height: 15px;
+    }
+
+    .material-diff {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-left: 4px;
+    }
+
+    .timer-box {
+      background: #1f241b;
+      color: var(--text-light);
+      font-variant-numeric: tabular-nums;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 8px;
+      min-width: 84px;
+      text-align: center;
+      border: 1px solid #444d3d;
+    }
+
+    .timer-box.active {
+      background: var(--cream);
+      color: #1f241b;
+    }
+
+    .timer-box.low-time {
+      background: var(--danger);
+      color: #fff;
+      border-color: #ff7b77;
+    }
+
+    .board-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+      user-select: none;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      width: 100%;
+      height: 100%;
+    }
+
+    .square {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .square.light {
+      background-color: var(--cream);
+      color: var(--green);
+    }
+
+    .square.dark {
+      background-color: var(--green);
+      color: var(--cream);
+    }
+
+    .square.last-move::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--highlight-last);
+      pointer-events: none;
+    }
+
+    .square.selected::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--highlight-select);
+      pointer-events: none;
+    }
+
+    .square.in-check {
+      background: radial-gradient(circle, #ff4e4e 0%, #d32f2f 65%, transparent 100%);
+    }
+
+    .coord-rank {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    .coord-file {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      pointer-events: none;
+      opacity: 0.85;
+    }
+
+    .piece {
+      width: 84%;
+      height: 84%;
+      z-index: 2;
+      pointer-events: none;
+      transition: transform 0.1s ease;
+      filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.28));
+    }
+
+    .square.selected .piece {
+      transform: scale(1.06);
+    }
+
+    .legal-dot {
+      position: absolute;
+      width: 28%;
+      height: 28%;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.22);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .legal-capture {
+      position: absolute;
+      width: 86%;
+      height: 86%;
+      border-radius: 50%;
+      border: 5px solid rgba(0, 0, 0, 0.22);
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .side-panel {
+      flex: 1;
+      min-width: 290px;
+      max-width: 380px;
+      background: var(--bg-panel);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .panel-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #444d3d;
+      padding-bottom: 10px;
+      gap: 8px;
+    }
+
+    .dev-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(118, 150, 86, 0.28);
+      color: var(--cream);
+      border: 1px solid var(--green);
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .status-banner {
+      background: var(--bg-card);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+      border-left: 4px solid var(--accent);
+    }
+
+    .status-banner.check {
+      border-left-color: #f0ad4e;
+      color: #ffe2b3;
+    }
+
+    .status-banner.gameover {
+      border-left-color: var(--cream);
+      background: #4b5743;
+      color: #fff;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .control-group label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    select, input[type="text"], input[type="url"], input[type="file"] {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #525e49;
+      background: #23281f;
+      color: var(--text-light);
+      font-size: 13.5px;
+    }
+
+    select { cursor: pointer; }
+
+    .engine-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .engine-row select { flex: 1; }
+
+    .btn-icon {
+      padding: 8px 11px;
+      background: var(--bg-card);
+      color: var(--cream);
+      border: 1px solid #56634d;
+      white-space: nowrap;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    button {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--green);
+      color: #fff;
+      grid-column: span 2;
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--cream);
+      border: 1px solid #56634d;
+    }
+
+    .btn-install {
+      grid-column: span 2;
+      background: #293124;
+      color: var(--cream);
+      border: 1px dashed var(--accent);
+    }
+
+    .btn-danger {
+      background: rgba(217, 83, 79, 0.2);
+      color: #ff9c99;
+      border: 1px solid var(--danger);
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .history-box {
+      background: #23281f;
+      border-radius: 8px;
+      padding: 10px;
+      height: 140px;
+      overflow-y: auto;
+      font-size: 13px;
+      border: 1px solid #3f4838;
+    }
+
+    .history-grid {
+      display: grid;
+      grid-template-columns: 36px 1fr 1fr;
+      gap: 4px 8px;
+      align-items: center;
+    }
+
+    .move-num { color: var(--text-muted); font-weight: 600; }
+    .move-cell { padding: 2px 6px; border-radius: 4px; color: var(--text-light); }
+    .move-cell.latest { background: rgba(118, 150, 86, 0.35); font-weight: 700; }
+
+    .app-footer {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      opacity: 0.85;
+    }
+    .app-footer strong { color: var(--cream); }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal-box {
+      background: var(--bg-panel);
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid var(--green);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+      max-width: 100%;
+    }
+
+    .promo-modal-box { text-align: center; }
+    .promo-modal-box h3 { margin-bottom: 14px; color: var(--cream); }
+    .promo-options { display: flex; gap: 12px; }
+
+    .promo-btn {
+      width: 64px;
+      height: 64px;
+      background: var(--cream);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      border: 2px solid var(--green);
+    }
+
+    .promo-btn svg { width: 100%; height: 100%; }
+
+    .installer-box {
+      width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .installer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #485440;
+      padding-bottom: 10px;
+    }
+
+    .installer-header h3 { color: var(--cream); font-size: 17px; }
+    .close-btn { background: transparent; color: var(--text-muted); font-size: 22px; padding: 2px 8px; }
+
+    .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 8px 10px;
+      font-size: 12px;
+      background: #23281f;
+      color: var(--text-muted);
+      border: 1px solid #444d3d;
+    }
+    .tab-btn.active { background: var(--green); color: #fff; border-color: var(--accent); }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      background: #282e23;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid #3f4838;
+    }
+    .tab-content.active { display: flex; }
+
+    .engine-list { display: flex; flex-direction: column; gap: 8px; max-height: 190px; overflow-y: auto; }
+    .engine-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #4e5a45;
+      gap: 10px;
+    }
+    .engine-item.active-engine { border-color: var(--cream); background: #46533e; }
+    .engine-meta { display: flex; flex-direction: column; gap: 2px; }
+    .engine-title { font-weight: 700; font-size: 14px; color: var(--cream); }
+    .engine-sub { font-size: 11.5px; color: var(--text-muted); }
+    .engine-actions { display: flex; gap: 6px; align-items: center; }
+    .btn-small { padding: 5px 10px; font-size: 12px; background: var(--green); color: #fff; }
+
+    .info-note {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+      background: #20251c;
+      padding: 10px;
+      border-radius: 6px;
+      border-left: 3px solid var(--green);
+    }
+    .info-note code {
+      background: #141711;
+      padding: 1px 5px;
+      border-radius: 4px;
+      color: var(--cream);
+      font-family: monospace;
+    }
+
+    .uci-console {
+      background: #141811;
+      color: #a8d882;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 11.5px;
+      padding: 10px;
+      border-radius: 6px;
+      height: 100px;
+      overflow-y: auto;
+      border: 1px solid #394233;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 820px) {
+      .side-panel { max-width: 540px; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="board-section">
+    <div class="player-bar" id="top-player-bar">
+      <div class="player-info">
+        <div class="avatar black" id="top-avatar">♚</div>
+        <div>
+          <div class="player-name" id="top-name">Hitam</div>
+          <div class="captured-list" id="top-captured"></div>
+        </div>
+      </div>
+      <div class="timer-box" id="top-timer">05:00</div>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="player-bar active-turn" id="bottom-player-bar">
+      <div class="player-info">
+        <div class="avatar white" id="bottom-avatar">♔</div>
+        <div>
+          <div class="player-name" id="bottom-name">Putih</div>
+          <div class="captured-list" id="bottom-captured"></div>
+        </div>
+      </div>
+      <div class="timer-box active" id="bottom-timer">05:00</div>
+    </div>
+  </div>
+
+  <div class="side-panel">
+    <div class="panel-title">
+      <span>♟️ Chess Century</span>
+      <span class="dev-badge">Dev: sepram</span>
+    </div>
+
+    <div class="status-banner" id="status-banner">Giliran Putih melangkah</div>
+
+    <div class="control-group">
+      <label for="game-mode">Mode Permainan</label>
+      <select id="game-mode">
+        <option value="bot-w">Lawan Bot (Anda Putih)</option>
+        <option value="bot-b">Lawan Bot (Anda Hitam)</option>
+        <option value="pvp">2 Pemain (Lokal)</option>
+      </select>
+    </div>
+
+    <div class="control-group" id="bot-engine-group">
+      <label for="engine-select">
+        <span>Bot / Engine Aktif</span>
+        <span id="engine-status-pill" style="color: var(--accent);">Siap</span>
+      </label>
+      <div class="engine-row">
+        <select id="engine-select"></select>
+        <button class="btn-icon" id="open-installer-btn" title="Install / Kelola Bot UCI">⚙️ GUI</button>
+      </div>
+    </div>
+
+    <div class="control-group" id="difficulty-group">
+      <label for="bot-level">Level Kekuatan Bot</label>
+      <select id="bot-level">
+        <option value="1">Mudah</option>
+        <option value="2" selected>Sedang</option>
+        <option value="3">Sulit</option>
+        <option value="4">Master / Maksimal (UCI)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="time-control">Timer (Waktu per Pemain)</label>
+      <select id="time-control">
+        <option value="180">3 Menit</option>
+        <option value="300" selected>5 Menit</option>
+        <option value="600">10 Menit</option>
+        <option value="0">Tanpa Timer</option>
+      </select>
+    </div>
+
+    <div class="btn-grid">
+      <button class="btn-primary" id="new-game-btn">Mulai Permainan Baru</button>
+      <button class="btn-secondary" id="undo-btn" disabled>↩ Undo</button>
+      <button class="btn-secondary" id="flip-btn">⇅ Putar Papan</button>
+      <button class="btn-install" id="open-installer-btn-2">🔌 Install Bot / Stockfish (UCI GUI)</button>
+    </div>
+
+    <div class="control-group">
+      <label>Riwayat Langkah</label>
+      <div class="history-box" id="history-box">
+        <div class="history-grid" id="history-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app-footer">
+  <strong>Chess Century</strong> • Developer: <strong>sepram</strong> • Mendukung Engine UCI Eksternal (Stockfish, Lozza, Komodo, Lc0)
+</div>
+
+<div class="modal-overlay" id="promo-modal">
+  <div class="modal-box promo-modal-box">
+    <h3>Pilih Promosi Pion</h3>
+    <div class="promo-options" id="promo-options"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="installer-modal">
+  <div class="modal-box installer-box">
+    <div class="installer-header">
+      <h3>🔌 Chess Century UCI Installer (by sepram)</h3>
+      <button class="close-btn" id="close-installer-btn">&times;</button>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="tab-installed">📋 Terpasang</button>
+      <button class="tab-btn" data-tab="tab-cdn">🌐 Install Stockfish</button>
+      <button class="tab-btn" data-tab="tab-upload">📁 Upload .js</button>
+      <button class="tab-btn" data-tab="tab-bridge">💻 Engine .exe</button>
+    </div>
+
+    <div class="tab-content active" id="tab-installed">
+      <div class="info-note">
+        Pilih engine yang ingin dipakai bertanding, atau tambahkan <strong>Stockfish</strong> & bot UCI lainnya melalui tab di atas.
+      </div>
+      <div class="engine-list" id="installed-engine-list"></div>
+    </div>
+
+    <div class="tab-content" id="tab-cdn">
+      <div class="info-note">
+        Mengunduh engine <strong>Stockfish 10.0.2 (JavaScript)</strong> dari CDN dan menyimpannya ke memori aplikasi agar bisa dimainkan kapan saja secara offline.
+      </div>
+      <button class="btn-primary" id="install-sf-cdn-btn">⬇️ Install Stockfish 10.0.2 (Otomatis)</button>
+
+      <div class="control-group" style="margin-top: 6px;">
+        <label for="custom-cdn-name">Atau Install dari URL Engine UCI (.js) Lain</label>
+        <input type="text" id="custom-cdn-name" placeholder="Nama Bot (contoh: Lozza JS)" />
+        <input type="url" id="custom-cdn-url" placeholder="https://.../engine.js" />
+        <button class="btn-secondary" id="install-custom-url-btn">Pasang dari URL</button>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-upload">
+      <div class="info-note">
+        Pilih file engine catur berbasis JavaScript (seperti <code>stockfish.js</code> atau <code>lozza.js</code>) dari penyimpanan HP/komputer untuk dipasang ke Chess Century.
+      </div>
+      <div class="control-group">
+        <label for="upload-bot-name">Nama Bot</label>
+        <input type="text" id="upload-bot-name" placeholder="Contoh: Stockfish Lokal" />
+      </div>
+      <div class="control-group">
+        <label for="upload-bot-file">File Engine (.js)</label>
+        <input type="file" id="upload-bot-file" accept=".js,text/javascript,application/javascript" />
+      </div>
+      <button class="btn-primary" id="install-upload-btn">📥 Install File Engine</button>
+    </div>
+
+    <div class="tab-content" id="tab-bridge">
+      <div class="info-note">
+        Untuk engine desktop <code>.exe</code> (<strong>Stockfish 17/18</strong>, <strong>Komodo</strong>, <strong>Lc0</strong>) via WebSocket lokal:
+        <br>1. Download skrip <code>uci_bridge.py</code>.
+        <br>2. Jalankan di PC: <code>python uci_bridge.py stockfish.exe</code>
+        <br>3. Masukkan IP PC/localhost lalu klik <strong>Hubungkan & Install</strong>.
+      </div>
+      <button class="btn-secondary" id="download-bridge-btn">📥 Download Script Bridge (uci_bridge.py)</button>
+      <div class="control-group">
+        <label for="ws-bot-name">Nama Engine Desktop</label>
+        <input type="text" id="ws-bot-name" value="Stockfish Desktop (.exe)" />
+     
