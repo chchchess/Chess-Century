@@ -23,29 +23,36 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Siapkan Project Chess Century
+      - name: Siapkan Project & Bundle Stockfish 19
         run: |
-          mkdir -p www
+          mkdir -p www/engines
           cp index.html www/index.html
           node -e '
             const fs = require("fs");
             fs.writeFileSync("package.json", JSON.stringify({
               name: "chess-century",
               version: "1.0.0",
-              dependencies: { "@capacitor/android": "^7.0.0", "@capacitor/core": "^7.0.0" },
+              dependencies: {
+                "@capacitor/android": "^7.0.0",
+                "@capacitor/core": "^7.0.0",
+                "stockfish": "^19.0.1"
+              },
               devDependencies: { "@capacitor/cli": "^7.0.0" }
             }, null, 2));
             fs.writeFileSync("capacitor.config.json", JSON.stringify({
               appId: "com.sepram.chesscentury",
               appName: "Chess Century",
               webDir: "www",
-              android: { backgroundColor: "#262b22" }
+              android: { backgroundColor: "#181c15" }
             }, null, 2));
           '
-
-      - name: Install & Build APK
-        run: |
           npm install
+          cp node_modules/stockfish/bin/stockfish-19-lite-single.js www/engines/ || true
+          cp node_modules/stockfish/bin/stockfish-19-lite-single.wasm www/engines/ || true
+          cp node_modules/stockfish/bin/stockfish-19-asm.js www/engines/ || true
+
+      - name: Build Android APK
+        run: |
           npx cap add android
           npx cap sync android
           cd android
