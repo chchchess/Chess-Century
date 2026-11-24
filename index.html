@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#141812" />
+  <title>Chess Century</title>
+  <style>
+    :root {
+      --bg-main: #141812;
+      --bg-panel: #1e241b;
+      --bg-card: #283024;
+      --bg-elevated: #313b2c;
+      --border-soft: rgba(238, 238, 210, 0.12);
+      --text-light: #f4f3e8;
+      --text-muted: #adb39e;
+      --sq-light: #eeeed2;
+      --sq-dark: #769656;
+      --accent: #8cb369;
+      --accent-bright: #a6d17b;
+      --gold: #e8c468;
+      --danger: #e05252;
+      --hl-select: rgba(246, 246, 105, 0.7);
+      --hl-last: rgba(186, 202, 68, 0.56);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #222a1e 0%, #141812 65%);
+      color: var(--text-light);
+      min-height: 100vh;
+      padding: max(20px, env(safe-area-inset-top)) 12px max(20px, env(safe-area-inset-bottom)) 12px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 1000px;
+      animation: fadeScreen 0.25s ease;
+    }
+
+    .screen.active { display: flex; }
+
+    @keyframes fadeScreen {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==================== MENU UTAMA PREMIUM ==================== */
+    #menu-screen {
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 44px);
+    }
+
+    .menu-card {
+      width: 100%;
+      max-width: 460px;
+      background: linear-gradient(160deg, rgba(38,46,34,0.96), rgba(24,29,22,0.98));
+      border-radius: 20px;
+      padding: 22px 18px;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+      border: 1px solid var(--border-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .brand-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-soft);
+      padding-bottom: 14px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #eeeed2 0%, #c8d6a9 50%, #769656 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      color: #192015;
+      box-shadow: 0 6px 16px rgba(118, 150, 86, 0.35);
+    }
+
+    .brand-title h1 {
+      font-size: 22px;
+      font-weight: 800;
+      background: linear-gradient(90deg, #f7f7e8, #d2e4b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p { font-size: 11.5px; color: var(--text-muted); }
+
+    .dev-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: linear-gradient(135deg, rgba(232,196,104,0.18), rgba(140,179,105,0.18));
+      color: var(--gold);
+      border: 1px solid rgba(232, 196, 104, 0.45);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .mode-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .mode-choice {
+      background: var(--bg-card);
+      border: 2px solid transparent;
+      border-radius: 14px;
+      padding: 13px 10px;
+      color: var(--text-light);
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.18s ease;
+    }
+
+    .mode-choice.selected {
+      border-color: var(--accent);
+      background: linear-gradient(160deg, #35422e, #283223);
+      box-shadow: 0 6px 18px rgba(118, 150, 86, 0.24);
+    }
+
+    .mode-choice .mc-icon { font-size: 24px; }
+    .mode-choice .mc-title { font-size: 14px; font-weight: 700; }
+    .mode-choice .mc-sub { font-size: 11px; color: var(--text-muted); }
+
+    .field-group { display: flex; flex-direction: column; gap: 6px; }
+    .field-group label {
+      font-size: 12px; font-weight: 700; color: var(--text-muted);
+      display: flex; justify-content: space-between; align-items: center;
+      text-transform: uppercase; letter-spacing: 0.4px;
+    }
+
+    /* Bot Showcase Card */
+    .selected-bot-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: linear-gradient(135deg, #2b3426, #21281d);
+      border: 1px solid rgba(140, 179, 105, 0.35);
+      border-radius: 14px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .selected-bot-card:active { transform: scale(0.99); }
+
+    .bot-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      padding: 6px;
+    }
+
+    .bot-avatar svg { width: 100%; height: 100%; }
+
+    .bot-info-main { flex: 1; min-width: 0; }
+    .bot-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .bot-name-txt { font-weight: 800; font-size: 14px; color: #f4f3e8; }
+    .elo-badge {
+      font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px;
+      background: rgba(232, 196, 104, 0.18); color: var(--gold); border: 1px solid rgba(232,196,104,0.4);
+    }
+    .bot-desc-txt { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .change-pill {
+      font-size: 11.5px; font-weight: 700; color: var(--accent-bright);
+      background: rgba(140,179,105,0.16); padding: 5px 10px; border-radius: 8px;
+    }
+
+    select, input[type="text"], input[type="url"], input[type="file"] {
+      width: 100%; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid rgba(238,238,210,0.15); background: #171c15;
+      color: var(--text-light); font-size: 13.5px;
+    }
+
+    .color-pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .pill-btn {
+      padding: 9px 6px; border-radius: 10px; background: #191e16; color: var(--text-muted);
+      border: 1px solid rgba(238,238,210,0.12); font-size: 13px; font-weight: 700; cursor: pointer;
+    }
+    .pill-btn.active {
+      background: linear-gradient(135deg, #5d7d42, #769656);
+      color: #fff; border-color: var(--accent-bright);
+      box-shadow: 0 3px 10px rgba(118,150,86,0.3);
+    }
+
+    button {
+      border: none; border-radius: 11px; font-size: 14px; font-weight: 700;
+      cursor: pointer; padding: 10px 14px; transition: transform 0.12s, opacity 0.15s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.42; cursor: not-allowed; transform: none; }
+
+    .btn-play {
+      background: linear-gradient(135deg, #6d914b, #8cb369);
+      color: #fff; font-size: 16px; padding: 14px;
+      box-shadow: 0 8px 22px rgba(118, 150, 86, 0.38);
+    }
+
+    .menu-sub-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .btn-dark {
+      background: var(--bg-card); color: #eeeed2;
+      border: 1px solid var(--border-soft); font-size: 13px; padding: 11px 8px;
+    }
+
+    /* ==================== LAYAR PERMAINAN ==================== */
+    #game-screen {
+      gap: 18px;
+      align-items: flex-start;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .game-board-col {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .top-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .nav-btn {
+      background: var(--bg-panel); color: #eeeed2; border: 1px solid var(--border-soft);
+      padding: 8px 12px; font-size: 12.5px; border-radius: 10px;
+    }
+
+    .opening-badge {
+      flex: 1; background: var(--bg-panel); border: 1px solid var(--border-soft);
+      border-radius: 10px; padding: 7px 10px; font-size: 12px; color: #e2ebd4;
+      text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-weight: 600;
+    }
+
+    .player-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-panel); padding: 8px 12px; border-radius: 12px;
+      border: 2px solid transparent; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .player-bar.active-turn {
+      border-color: var(--accent);
+      box-shadow: 0 0 14px rgba(140, 179, 105, 0.22);
+    }
+
+    .player-info { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .avatar-sm {
+      width: 34px; height: 34px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; overflow: hidden; padding: 3px;
+    }
+    .avatar-sm.white { background: #f4f4ec; color: #192015; font-size: 19px; font-weight: bold; }
+    .avatar-sm.black { background: #171b15; color: #f4f4ec; border: 1px solid #4d5846; font-size: 19px; font-weight: bold; }
+    .avatar-sm svg { width: 100%; height: 100%; }
+
+    .player-name {
+      font-weight: 700; font-size: 13.5px; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; max-width: 175px;
+    }
+    .captured-list { display: flex; align-items: center; gap: 1px; min-height: 16px; flex-wrap: wrap; }
+    .captured-list svg { width: 14px; height: 14px; }
+    .material-diff { font-size: 11px; font-weight: 800; color: var(--accent-bright); margin-left: 4px; }
+
+    .timer-box {
+      background: #141812; color: var(--text-light); font-variant-numeric: tabular-nums;
+      font-size: 17px; font-weight: 800; padding: 6px 12px; border-radius: 9px;
+      min-width: 78px; text-align: center; border: 1px solid var(--border-soft);
+    }
+    .timer-box.active { background: #eeeed2; color: #141812; }
+    .timer-box.low-time { background: var(--danger); color: #fff; border-color: #ff9a9a; }
+
+    /* Papan & Animasi Halus */
+    .board-wrapper {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      user-select: none;
+      position: relative;
+      background: var(--sq-dark);
+    }
+
+    .board-wrapper.board-3d {
+      border: 6px solid #3c3226;
+      box-shadow: 0 16px 34px rgba(0,0,0,0.68), inset 0 2px 8px rgba(255,255,255,0.22);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-rows: repeat(8, minmax(0, 1fr));
+      width: 100%;
+      height: 100%;
+    }
+
+    .square { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+    .square.light { background-color: var(--sq-light); color: var(--sq-dark); }
+    .square.dark { background-color: var(--sq-dark); color: var(--sq-light); }
+
+    .theme-wood .square.light {
+      background-image: repeating-linear-gradient(12deg, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 3px, rgba(160,100,40,0.05) 3px, rgba(160,100,40,0.05) 7px);
+    }
+    .theme-wood .square.dark {
+      background-image: repeating-linear-gradient(12deg, rgba(0,0,0,0.08) 0px, rgba(0,0,0,0.08) 3px, rgba(255,220,170,0.04) 3px, rgba(255,220,170,0.04) 7px);
+    }
+
+    .square.last-move::before { content:''; position:absolute; inset:0; background: var(--hl-last); pointer-events:none; }
+    .square.selected::before { content:''; position:absolute; inset:0; background: var(--hl-select); pointer-events:none; }
+    .square.in-check { background: radial-gradient(circle, #ff5252 0%, #c62828 70%, transparent 100%) !important; }
+
+    .coord-rank { position:absolute; top:2px; left:3px; font-size:9.5px; font-weight:700; pointer-events:none; opacity:0.85; }
+    .coord-file { position:absolute; bottom:1px; right:3px; font-size:9.5px; font-weight:700; pointer-events:none; opacity:0.85; }
+
+    .piece {
+      width: 85%; height: 85%; z-index: 3; pointer-events: none;
+      will-change: transform;
+    }
+
+    .style-modern .piece { filter: drop-shadow(0 2px 3px rgba(0,0,0,0.28)); }
+    .style-classic .piece { filter: sepia(20%) contrast(1.08) drop-shadow(0 2px 2px rgba(0,0,0,0.4)); }
+    .style-3d .piece {
+      width: 88%; height: 88%; transform: translateY(-2.5px);
+      filter: drop-shadow(0 6px 3px rgba(0,0,0,0.55)) drop-shadow(0 1px 0 rgba(255,255,255,0.32));
+    }
+
+    .legal-dot {
+      position: absolute; width: 28%; height: 28%; border-radius: 50%;
+      background: rgba(0,0,0,0.24); z-index: 4; pointer-events: none;
+    }
+    .legal-capture {
+      position: absolute; width: 86%; height: 86%; border-radius: 50%;
+      border: 4.5px solid rgba(0,0,0,0.24); z-index: 4; pointer-events: none;
+    }
+
+    /* Hint SVG Arrow Overlay */
+    #hint-overlay {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 6;
+    }
+
+    .move-badge-sq {
+      position: absolute; top: 2px; right: 2px; font-size: 10px; font-weight: 900;
+      padding: 1px 5px; border-radius: 999px; color: #fff; z-index: 7;
+      pointer-events: none; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .q-brilliant { background: #1baca6; }
+    .q-great { background: #5c8bb0; }
+    .q-best { background: #7fa650; }
+    .q-good { background: #6d8f4e; }
+    .q-inaccuracy { background: #f0c15c; color: #222; }
+    .q-mistake { background: #e6912c; }
+    .q-blunder { background: #ca3431; }
+
+    /* Panel Kontrol Game */
+    .game-side-col {
+      flex: 1; min-width: 280px; max-width: 370px; width: 100%;
+      background: var(--bg-panel); border-radius: 14px; padding: 14px;
+      display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border-soft);
+    }
+
+    .status-row {
+      background: var(--bg-card); padding: 10px 12px; border-radius: 10px;
+      font-size: 13.5px; font-weight: 600; display: flex; justify-content: space-between;
+      align-items: center; gap: 8px; border-left: 4px solid var(--accent);
+    }
+    .status-row.check { border-left-color: #f0ad4e; color: #ffe3b8; }
+    .status-row.gameover { border-left-color: #eeeed2; background: #46553e; color: #fff; }
+
+    .quality-pill { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; color: #fff; white-space: nowrap; }
+
+    .hint-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(232,196,104,0.16), rgba(140,179,105,0.16));
+      border: 1px solid rgba(232,196,104,0.45);
+      border-radius: 9px; padding: 8px 11px; font-size: 12.5px; font-weight: 700; color: #f6e3a8;
+    }
+    .hint-banner.show { display: block; }
+
+    .action-row { display: flex; gap: 7px; }
+    .btn-act {
+      flex: 1; background: var(--bg-card); color: #eeeed2;
+      border: 1px solid var(--border-soft); padding: 9px 4px; font-size: 12.5px;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .btn-hint {
+      background: linear-gradient(135deg, rgba(232,196,104,0.22), rgba(200,158,60,0.22));
+      border-color: rgba(232,196,104,0.5); color: #f8e2a0;
+    }
+
+    .history-box {
+      background: #151a13; border-radius: 10px; padding: 9px;
+      height: 135px; overflow-y: auto; font-size: 12.5px; border: 1px solid var(--border-soft);
+    }
+    .history-grid { display: grid; grid-template-columns: 32px 1fr 1fr; gap: 4px 6px; align-items: center; }
+    .move-num { color: var(--text-muted); font-weight: 600; }
+    .move-cell { padding: 2px 5px; border-radius: 4px; display: flex; justify-content: space-between; gap: 4px; }
+    .move-cell.latest { background: rgba(140,179,105,0.28); font-weight: 700; }
+    .m-tag { font-weight: 800; font-size: 11px; }
+
+    /* ==================== MODAL PREMIUM (SETTINGS, BOT PICKER, UCI) ==================== */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78);
+      backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 300; padding: 14px;
+    }
+    .modal-overlay.show { display: flex; animation: fadeScreen 0.2s ease; }
+
+    .modal-box {
+      background: linear-gradient(165deg, #252d21, #191f16);
+      padding: 18px; border-radius: 18px;
+      border: 1px solid rgba(140, 179, 105, 0.35);
+      box-shadow: 0 22px 50px rgba(0, 0, 0, 0.7);
+      max-width: 100%; width: 480px; max-height: 90vh; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--border-soft); padding-bottom: 10px;
+    }
+    .modal-header h3 { font-size: 17px; color: #f4f3e8; font-weight: 800; }
+    .close-btn { background: rgba(255,255,255,0.08); color: var(--text-light); font-size: 20px; width: 32px; height: 32px; padding: 0; border-radius: 50%; }
+
+    /* Mini Preview Board di Settings */
+    .settings-preview {
+      background: #141812; border-radius: 12px; padding: 12px;
+      display: flex; align-items: center; justify-content: center; gap: 16px;
+      border: 1px solid var(--border-soft);
+    }
+    .mini-board {
+      width: 96px; height: 96px; display: grid; grid-template-columns: repeat(2, 1fr);
+      border-radius: 8px; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,0.5); flex-shrink: 0;
+    }
+    .mini-sq { display: flex; align-items: center; justify-content: center; padding: 4px; }
+    .mini-sq svg { width: 90%; height: 90%; }
+    .preview-info { font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+    .preview-info strong { color: #eeeed2; display: block; font-size: 14px; margin-bottom: 2px; }
+
+    .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .theme-opt {
+      display: flex; align-items: center; gap: 9px; background: #191f16;
+      border: 2px solid rgba(238,238,210,0.1); padding: 9px 10px;
+      border-radius: 10px; color: var(--text-light); font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .theme-opt.active { border-color: var(--accent); background: #2e3b28; }
+    .swatch { width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.22); }
+
+    /* Toggle Switch Premium */
+    .toggle-row {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #191f16; padding: 11px 13px; border-radius: 11px;
+      border: 1px solid var(--border-soft); font-size: 13.5px; font-weight: 600; cursor: pointer;
+    }
+    .switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #3b4236; border-radius: 999px; transition: 0.2s;
+    }
+    .slider::before {
+      content: ''; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px;
+      background: #fff; border-radius: 50%; transition: 0.2s;
+    }
+    .switch input:checked + .slider { background: var(--accent); }
+    .switch input:checked + .slider::before { transform: translateX(20px); }
+
+    /* Bot Picker Modal List */
+    .bot-roster-list { display: flex; flex-direction: column; gap: 9px; }
+    .bot-roster-item {
+      display: flex; align-items: center; gap: 11px; padding: 11px;
+      border-radius: 13px; background: #191f16; border: 2px solid transparent; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .bot-roster-item.active { border-color: var(--accent); background: #2c3826; }
+
+    /* Installer Tabs */
+    .tab-bar { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-btn {
+      flex: 1; min-width: 85px; padding: 8px 6px; font-size: 12px;
+      background: #171c15; color: var(--text-muted); border: 1px solid var(--border-soft);
+    }
+    .tab-btn.active { background: #658648; color: #fff; border-color: var(--accent); }
+
+    .tab-content {
+      display: none; flex-direction: column; gap: 10px;
+      background: #171c15; padding: 12px; border-radius: 11px; border: 1px solid var(--border-soft);
+    }
+    .tab-content.active { display: flex; }
+
+    .engine-list { display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; }
+    .engine-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--bg-card); padding: 9px 11px; border-radius: 10px; border: 1px solid var(--border-soft); gap: 8px;
+    }
+    .engine-item.active-engine { border-color: var(--accent); background: #34432d; }
+    .engine-title { font-weight: 700; font-size: 13px; color: #eeeed2; }
+    .engine-sub { font-size: 11px; color: var(--text-muted); }
+
+    .btn-small { padding: 6px 10px; font-size: 12px; background: #658648; color: #fff; border-radius: 8px; }
+    .btn-danger { padding: 6px 10px; font-size: 12px; background: rgba(224,82,82,0.2); color: #ff9c99; border: 1px solid var(--danger); border-radius: 8px; }
+
+    .info-note {
+      font-size: 12px; color: var(--text-muted); line-height: 1.45;
+      background: #1e241b; padding: 9px; border-radius: 8px; border-left: 3px solid var(--accent);
+    }
+    .uci-console {
+      background: #0f130d; color: #a8d882; font-family: monospace; font-size: 11px;
+      padding: 9px; border-radius: 8px; height: 85px; overflow-y: auto; border: 1px solid var(--border-soft); white-space: pre-wrap;
+    }
+
+    .promo-options { display: flex; gap: 10px; justify-content: center; }
+    .promo-btn {
+      width: 62px; height: 62px; background: #eeeed2; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; padding: 8px; border: 2px solid var(--accent);
+    }
+    .promo-btn svg { width: 100%; height: 100%; }
+
+    @media (max-width: 820px) {
+      .game-side-col { max-width: 520px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==================== SCREEN 1: MENU UTAMA ==================== -->
+<div class="screen active" id="menu-screen">
+  <div class="menu-card">
+    <div class="brand-header">
+      <div class="brand-title">
+        <div class="brand-logo">♞</div>
+        <div>
+          <h1>Chess Century</h1>
+          <p>Grandmaster Edition</p>
+        </div>
+      </div>
+      <span class="dev-badge">Dev: sepram</span>
+    </div>
+
+    <div class="field-group">
+      <label>Mode Permainan</label>
+      <div class="mode-cards">
+        <div class="mode-choice selected" id="choose-bot-card">
+          <span class="mc-icon">🤖</span>
+          <span class="mc-title">Lawan Bot</span>
+          <span class="mc-sub">Stockfish, Lozza, AI</span>
+        </div>
+        <div class="mode-choice" id="choose-pvp-card">
+          <span class="mc-icon">👥</span>
+          <span class="mc-title">Lawan Teman</span>
+          <span class="mc-sub">2 Pemain Lokal</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="menu-bot-options" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="field-group">
+        <label>
+          <span>Lawan Bot Terpilih</span>
+          <span id="menu-engine-pill" style="color:var(--accent-bright); text-transform:none;">Siap</span>
+        </label>
+        <div class="selected-bot-card" id="open-bot-picker-btn">
+          <div class="bot-avatar" id="selected-bot-avatar"></div>
+          <div class="bot-info-main">
+            <div class="bot-name-row">
+              <span class="bot-name-txt" id="selected-bot-name">Stockfish 10</span>
+              <span class="elo-badge" id="selected-bot-elo">2900</span>
+            </div>
+            <div class="bot-desc-txt" id="selected-bot-desc">Engine UCI Resmi Offline</div>
+          </div>
+          <span class="change-pill">Ganti ▾</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Bermain Sebagai</label>
+        <div class="color-pills">
+          <button type="button" class="pill-btn active" data-color="w">♔ Putih</button>
+          <button type="button" class="pill-btn" data-color="b">♚ Hitam</button>
+          <button type="button" class="pill-btn" data-color="r">🎲 Acak</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="menu-bot-level">Level Kekuatan</label>
+        <select id="menu-bot-level">
+          <option value="1">Pemula (Santai)</option>
+          <option value="2" selected>Menengah (Klub)</option>
+          <option value="3">Pro (Master)</option>
+          <option value="4">Maksimal (Grandmaster)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label for="menu-time-control">Kontrol Waktu</label>
+      <select id="menu-time-control">
+        <option value="0|0">Tanpa Waktu (Santai ∞)</option>
+        <option value="60|0">1 Menit (Bullet)</option>
+        <option value="120|1">2 Menit + 1 Detik</option>
+        <option value="180|0">3 Menit (Blitz)</option>
+        <option value="180|2">3 Menit + 2 Detik</option>
+        <option value="300|0" selected>5 Menit (Blitz)</option>
+        <option value="600|0">10 Menit (Rapid)</option>
+        <option value="900|10">15 Menit + 10 Detik</option>
+        <option value="1800|0">30 Menit (Classical)</option>
+      </select>
+    </div>
+
+    <button class="btn-play" id="start-play-btn">▶ Mulai Pertandingan</button>
+
+    <div class="menu-sub-btns">
+      <button class="btn-dark" id="open-settings-menu-btn">⚙️ Pengaturan</button>
+      <button class="btn-dark" id="open-installer-menu-btn">🔌 Install Bot UCI</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCREEN 2: LAYAR PERMAINAN ==================== -->
+<div class="screen" id="game-screen">
+  <div class="game-board-col">
+    <div class="top-nav">
+      <button class="nav-btn" id="back-menu-btn">← Menu</button>
+      <div class="opening-badge" id="opening-badge">📖 Posisi Awal</div>
+      <button class="nav-btn" id="open-settings-game-btn">⚙️</button>
+    </div>
+
+    <div class="player-bar" id="top-player-bar">
+      <div class="player-info">
+        <div class="avatar-sm black" id="top-avatar">♚</div>
+        <div>
+          <div class="player-name" id="top-name">Hitam</div>
+          <div class="captured-list" id="top-captured"></div>
+        </div>
+      </div>
+      <div class="timer-box" id="top-timer">05:00</div>
+    </div>
+
+    <div class="board-wrapper" id="board-wrapper">
+      <div class="board" id="board"></div>
+      <svg id="hint-overlay" viewBox="0 0 800 800"></svg>
+    </div>
+
+    <div class="player-bar active-turn" id="bottom-player-bar">
+      <div class="player-info">
+        <div class="avatar-sm white" id="bottom-avatar">♔</div>
+        <div>
+          <div class="player-name" id="bottom-name">Putih</div>
+          <div class="captured-list" id="bottom-captured"></div>
+        </div>
+      </div>
+      <div class="timer-box active" id="bottom-timer">05:00</div>
+    </div>
+  </div>
+
+  <div class="game-side-col">
+    <div class="status-row" id="status-banner">
+      <span id="status-text">Giliran Putih melangkah</span>
+      <span class="quality-pill" id="quality-pill" style="display:none;"></span>
+    </div>
+
+    <div class="hint-banner" id="hint-banner"></div>
+
+    <div class="action-row">
+      <button class="btn-act" id="undo-btn" disabled>↩ Undo</button>
+      <button class="btn-act btn-hint" id="hint-btn">💡 Saran</button>
+      <button class="btn-act" id="flip-btn">⇅ Putar</button>
+      <button class="btn-act" id="restart-btn">🔄 Ulang</button>
+    </div>
+
+    <div class="field-group">
+      <label>Riwayat Langkah</label>
+      <div class="history-box" id="history-box">
+        <div class="history-grid" id="history-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL PILIH BOT PREMIUM ==================== -->
+<div class="modal-overlay" id="bot-picker-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>🤖 Pilih Lawan Bot</h3>
+      <button class="close-btn" id="close-bot-picker-btn">&times;</button>
+    </div>
+    <div class="bot-roster-list" id="bot-roster-list"></div>
+    <button class="btn-dark" id="picker-to-installer-btn">🔌 Pasang Engine Lain (Stockfish .js / .exe)</button>
+  </div>
+</div>
+
+<!-- ==================== MODAL PENGATURAN PREMIUM ==================== -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3>⚙️ Pengaturan Premium</h3>
+      <button class="close-btn" id="close-settings-btn">&times;</button>
+    </div>
+
+    <div class="settings-preview">
+      <div class="mini-board" id="mini-preview-board"></div>
+      <div class="preview-info">
+        <strong id="preview-label">Hijau Krem • Modern</strong>
+        Tampilan papan &amp; gaya bidak langsung diperbarui secara real-time.
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Tema Papan Catur</label>
+      <div class="theme-grid" id="theme-grid">
+        <button class="theme-opt active" data-theme="green">
+          <span class="swatch" style="background:linear-gradient(135deg,#eeeed2 50%,#769656 50%);"></span>Hijau Krem
+        </button>
+        <button class="theme-opt" data-theme="navy">
+          <span class="swatch" style="background:linear-gradient(135deg,#eef3f8 50%,#1d3c6a 50%);"></span>Putih &amp; Navy
+        </button>
+        <button class="theme-opt" data-theme="sky">
+          <span class="swatch" style="background:linear-gradient(135deg,#f2f8ff 50%,#3b82f6 50%);"></span>Biru Cerah
+        </button>
+        <button class="theme-opt" data-theme="wood">
+          <span class="swatch" style="background:linear-gradient(135deg,#e6c89e 50%,#8d5524 50%);"></span>Kayu (Wood)
+        </button>
+        <button class="theme-opt" data-theme="bw">
+          <span class="swatch" style="background:linear-gradient(135deg,#f4f4f4 50%,#2c2c2c 50%);"></span>Classic B&amp;W
+        </button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Gaya Bidak</label>
+      <div class="color-pills" id="piece-style-pills">
+        <button type="button" class="pill-btn active" data-pstyle="modern">Modern</button>
+        <button type="button" class="pill-btn" data-pstyle="classic">Classic</button>
+        <button type="button" class="pill-btn" data-pstyle="3d">3D Timbul</button>
+      </div>
+    </div>
+
+    <label class="toggle-row">
+      <span>🔊 Suara Catur (Chess.com Style)</span>
+      <span class="switch"><input type="checkbox" id="opt-sound" checked /><span class="slider"></span></span>
+    </label>
+
+    <label class="toggle-row">
+      <span>✨ Deteksi Brilliant / Blunder</span>
+      <span class="switch"><input type="checkbox" id="opt-analysis" checked /><span class="slider"></span></span>
+    </label>
+
+    <label class
