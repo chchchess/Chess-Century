@@ -23,7 +23,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Siapkan Project & Bundle Stockfish 19
+      - name: Siapkan Project & Stockfish 19
         run: |
           mkdir -p www/engines
           cp index.html www/index.html
@@ -43,13 +43,12 @@ jobs:
               appId: "com.sepram.chesscentury",
               appName: "Chess Century",
               webDir: "www",
-              android: { backgroundColor: "#181c15" }
+              android: { backgroundColor: "#141812" }
             }, null, 2));
           '
           npm install
-          cp node_modules/stockfish/bin/stockfish-19-lite-single.js www/engines/ || true
-          cp node_modules/stockfish/bin/stockfish-19-lite-single.wasm www/engines/ || true
-          cp node_modules/stockfish/bin/stockfish-19-asm.js www/engines/ || true
+          cp node_modules/stockfish/bin/stockfish-19-lite-single.* www/engines/ 2>/dev/null || true
+          ls -la www/engines/
 
       - name: Build Android APK
         run: |
